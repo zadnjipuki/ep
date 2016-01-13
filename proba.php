@@ -7,7 +7,8 @@
  * AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1. Set the 'ServerName' directive globally to suppress this message
 
  */
-
+session_start();
+session_destroy();
 
 echo "JAZ SEM PAULA";
 $showimage = "slike_izdelkov/jakna_1.jpg";

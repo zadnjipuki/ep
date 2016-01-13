@@ -63,7 +63,9 @@ if(isset($_GET["izvor"]) && $_GET["izvor"]== "zunaj"){
                 Email <input type="text" name="email"> <br>
 		Geslo <input type="text" name="geslo" /><br>
                 Naslov <input type="text" name="naslov" /><br>
+                Posta <input type="text" name="posta"><br>
                 Telefon <input type="text" name="telefon" /><br>
+                
                 <input type="hidden" name="funkcija" value = "stranka" />
                 <input type="hidden" name="izvor" value = "znotraj" />
                 <input type="hidden" name="tip" value = "novo" /><br>
@@ -160,7 +162,8 @@ else if(isset($_POST["izvor"])){
         $funkcija  = $_POST["funkcija"];
         $naslov = $_POST["naslov"];
         $telefon = $_POST["telefon"];
-        DBTrgovina::dodajStranko($funkcija,$ime,$priimek,$email,$geslo,$naslov,$telefon);
+        $posta= $_POST["posta"];
+        DBTrgovina::dodajStranko($funkcija,$ime,$priimek,$email,$geslo,$naslov,$posta,$telefon);
     }
 
     else if($_POST["tip"] == "novo" && $_POST["funkcija"] == "artikel"){
@@ -195,8 +198,8 @@ else if(isset($_POST["izvor"])){
             <h1>Posodobitev stranke</h1>
             <?php
             try{
-                //$geslo = password_hash($url, $algo)
-                DBTrgovina::updateStranka($_POST["id"],$_POST["ime"],$_POST["priimek"],$_POST["email"],$_POST["geslo"],$_POST["naslov"],$_POST["telefon"],$_POST["status"]);
+                $id_poste = DBTrgovina::getIdPosta($_POST["posta"]);
+                DBTrgovina::updateStranka($_POST["id"],$_POST["ime"],$_POST["priimek"],$_POST["email"],$_POST["geslo"],$_POST["naslov"],$id_poste,$_POST["telefon"],$_POST["status"]);
                 echo "Posodobitev je bila uspesna.";
             } catch (Exception $e) {
                 echo "<p>Napaka pri zapisu: {$e->getMessage()}.</p>";
@@ -297,6 +300,8 @@ else{
             $status = $row["status"];    
             $ime = $row["ime"];
             $priimek = $row["priimek"];
+            $id_posta = $row["id_poste"];
+            $posta = DBTrgovina::getPosta($id_posta);
             ?>
             <h2>Urejanje atributov osebe z id = <?= $id ?></h2>
             <form action="<?= $_SERVER["PHP_SELF"] ?>" method="post">
@@ -309,6 +314,7 @@ else{
                 Email <input type="text" name="email" value="<?= $email ?>" /><br />
                 Novo geslo (lahko vneses starega) <input type="text" name="geslo" /><br />
                 Naslov <input type="text" name="naslov" value="<?= $naslov ?>" /><br />
+                Posta <input type="text" name="posta" value="<?= $posta ?>" /><br />
                 Telefon <input type="text" name="telefon" value="<?= $telefon ?>" /><br />
                 Status <input type="text" name="status" value="<?= $status ?>" /><br />
                 <input type="submit" value="Shrani" />

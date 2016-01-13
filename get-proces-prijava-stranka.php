@@ -24,7 +24,9 @@ catch (Exception $e) {
 }
 
 if(preveriPrijavo($vsiLjudje,$email,$geslo)){
+    session_start();
      echo "Pozdravljeni. Vasa prijava je veljavna.";
+     echo "session start";
     if($funkcija == "stranka"){ ?>
         <form action="vsi-main.php" method="get">
 		<input type="hidden" name="email" value= "<?= $email ?>" />

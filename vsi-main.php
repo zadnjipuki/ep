@@ -8,8 +8,16 @@ include 'funkcije.php';
 include 'database-methods.php';
 $funkcija = $_GET["funkcija"];
 $email = $_GET["email"];
+#odjava uporabnika
+if(isset($_GET["tip"])&& $_GET["tip"]=="odjava"){
+    session_start();
+    session_destroy();
+    
+}
 
-if($funkcija == "administrator"){
+
+
+else if($funkcija == "administrator"){
  ?>
  <h2><a href=<?= "atributi-ljudi.php?tip=posodobi&funkcija=administrator&email=$email&sebe=da"?>>Posodobi moje atribute</a></h2>
  
@@ -54,7 +62,7 @@ else{
   
   <h2><a href=<?= "atributi-ljudi.php?tip=novo&funkcija=stranka&izvor=zunaj"?>>Dodaj nove stranke</a></h2>
  
-   <h2><a href=<?= "get-prijava-vsi.php"?>>Odjava</a></h2>
+   <h2><a href=<?= $_SERVER["PHP_SELF"]."?funkcija=$funkcija&tip=odjava&email=$email"?>>Odjava</a></h2>
 
 <?php
 }

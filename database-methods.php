@@ -93,6 +93,36 @@ class DBTrgovina {
 
         return $statement->fetchAll();
     }
+     public static function getAdmin(){
+        //echo "sem v pravi funkciji";
+        $db = DBInit::getInstance();
+        $funkcija = "administrator";
+        $statement = $db->prepare("SELECT email FROM zaposleni WHERE funkcija = :funkcija");
+        $statement->bindParam(":funkcija", $funkcija);
+        $statement->execute();
+
+        return  $statement->fetch();
+        
+    }
+    
+    public static function getProdajalci(){
+        //echo "sem v pravi funkciji";
+        $db = DBInit::getInstance();
+        $funkcija = "prodajalec";
+        $statement = $db->prepare("SELECT email FROM zaposleni WHERE funkcija = :funkcija");
+        $statement->bindParam(":funkcija", $funkcija);
+        $statement->execute();
+
+        $return =  $statement->fetchAll();
+        
+        $vrni = array();
+        foreach ($return as $slika){
+            $vrni[] = reset($slika);
+        }
+        return $vrni;
+        
+    }
+    
     public static function getVsiZaposleni($funkcija){
         //echo "sem v pravi funkciji";
         $db = DBInit::getInstance();
@@ -117,7 +147,7 @@ class DBTrgovina {
     public static function getStranka($id){
         $db = DBInit::getInstance();
 
-        $statement = $db->prepare("SELECT  ime, priimek, email, geslo, naslov, telefon, status FROM stranke WHERE id_stranke = :id");
+        $statement = $db->prepare("SELECT  ime, priimek, email, geslo, naslov,id_poste, telefon, status FROM stranke WHERE id_stranke = :id");
         $statement->bindParam(":id", $id);
         $statement->execute();
 
@@ -149,19 +179,64 @@ class DBTrgovina {
         $statement->execute();
         
     }
-    public static function dodajStranko($funkcija,$ime,$priimek,$email,$geslo,$naslov,$telefon){
+    public static function getPosta($id_posta){
+        $db = DBInit::getInstance();
+        
+        $statement = $db->prepare("SELECT  naslov FROM posta WHERE posta_id = :id");
+        $statement->bindParam(":id", $id_posta);
+        $statement->execute();
+
+        return reset($statement->fetch());
+        
+    }
+    
+    
+    
+    
+     public static function getIdPosta($posta){
+        $db = DBInit::getInstance();
+       
+        $statement = $db->prepare("SELECT posta_id FROM posta WHERE naslov = :posta");
+        $statement->bindParam(":posta", $posta);
+        
+        
+        $statement->execute();
+        $id = $statement->fetch();
+        if(empty($id)){
+            $statement = $db->prepare("INSERT INTO posta (naslov)
+            VALUES (:posta)");
+            $statement->bindParam(":posta", $posta);
+            $statement->execute();
+            
+            $statement = $db->prepare("SELECT MAX(posta_id) FROM posta WHERE naslov=:posta");
+            $statement->bindParam(":posta", $posta);
+            $statement->execute();
+            $id_pos = $statement->fetch();
+            $id_pos = reset($id_pos);
+            return $id_pos;
+        
+        }
+        else{
+             $id = reset($id);
+             return $id;
+        }
+        
+    }
+    
+    public static function dodajStranko($funkcija,$ime,$priimek,$email,$geslo,$naslov,$posta,$telefon){
         $db = DBInit::getInstance();
         $geslo = password_hash($geslo,PASSWORD_DEFAULT);
         
-        
-        $statement = $db->prepare("INSERT INTO stranke ( ime,priimek,email,geslo,naslov,telefon)
-            VALUES ( :ime,:priimek,:email,:geslo,:naslov,:telefon)");
+        $posta = DBTrgovina::getIdPosta($posta);
+        $statement = $db->prepare("INSERT INTO stranke ( ime,priimek,email,geslo,naslov,id_poste,telefon)
+            VALUES ( :ime,:priimek,:email,:geslo,:naslov,:posta,:telefon)");
         $statement->bindParam(":ime", $ime);
         
         $statement->bindParam(":priimek", $priimek);
         $statement->bindParam(":email", $email);
         $statement->bindParam(":geslo", $geslo);
         $statement->bindParam(":naslov", $naslov);
+        $statement->bindParam(":posta", $posta);        
         $statement->bindParam(":telefon", $telefon);
         $statement->execute();
         
@@ -181,24 +256,26 @@ class DBTrgovina {
     }
     
     
-    public static function updateStranka($id,$ime,$priimek,$email,$geslo,$naslov,$telefon,$status) {
+    public static function updateStranka($id,$ime,$priimek,$email,$geslo,$naslov,$posta,$telefon,$status) {
         $db = DBInit::getInstance();
-
+        #$posta = DBTrgovina::getIdPosta($posta);
+        $geslo = password_hash($geslo,PASSWORD_DEFAULT);
         $statement = $db->prepare("UPDATE stranke SET ime=:ime,
-            priimek=:priimek, email = :email,geslo=:geslo,naslov=:naslov,telefon=:telefon,status=:status WHERE id_stranke =:id");
+            priimek=:priimek, email = :email,geslo=:geslo,naslov=:naslov,id_poste=:posta,telefon=:telefon,status=:status WHERE id_stranke =:id");
         $statement->bindParam(":ime", $ime);
         $statement->bindParam(":id", $id);
         $statement->bindParam(":priimek", $priimek);
         $statement->bindParam(":email", $email);
         $statement->bindParam(":geslo", $geslo);
         $statement->bindParam(":naslov", $naslov);
+         $statement->bindParam(":posta", $posta);
         $statement->bindParam(":telefon", $telefon);
         $statement->bindParam(":status", $status);
         $statement->execute();
     }
     public static function updateZaposleni($id,$ime,$priimek,$email,$geslo,$status) {
         $db = DBInit::getInstance();
-
+         $geslo = password_hash($geslo,PASSWORD_DEFAULT);
         $statement = $db->prepare("UPDATE zaposleni SET ime=:ime,
             priimek=:priimek, email = :email,geslo=:geslo,status = :status WHERE id_zaposleni =:id");
         $statement->bindParam(":ime", $ime);
@@ -318,6 +395,24 @@ class DBTrgovina {
         $statement->execute();
         return  $statement->fetchAll();
     }
+    
+    public static function preveriPrijavo($vseStranke, $email, $geslo){ //function parameters, two variables.
+    $check = False;
+      
+        foreach ($vseStranke as $key => $row){
+            $trenutniMail = $row["email"];
+            
+            if($trenutniMail === $email){
+               $trenutnoGeslo = $row["geslo"];
+                if(password_verify($geslo, $trenutnoGeslo)) $check = True;
+                else $check = False;
+                break;
+            }
+        }
+    
+   
+   return $check;
+  }
     
     
     
